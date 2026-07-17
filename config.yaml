@@ -1,0 +1,172 @@
+loader:
+  pdf_dpi: 220
+  max_render_dimension: 5000
+
+orientation:
+  enabled: true
+  minimum_rotation_score_gain: 0.07
+  text_threshold_block_size: 31
+  text_threshold_constant: 11
+  lower_band_weight: 0.08
+  horizontal_structure_weight: 0.22
+  compactness_weight: 0.05
+  face_weight: 0.35
+  eye_weight: 0.20
+  machine_readable_texture_weight: 0.10
+  face_scale_factor: 1.08
+  face_min_neighbors: 4
+  eye_scale_factor: 1.08
+  eye_min_neighbors: 3
+  eye_pair_min_x_ratio: 0.12
+  eye_pair_max_x_ratio: 0.88
+  eye_pair_min_y_ratio: 0.18
+  eye_pair_max_y_ratio: 0.58
+  eye_pair_min_separation_ratio: 0.18
+  eye_pair_max_separation_ratio: 0.62
+  eye_pair_max_vertical_delta_ratio: 0.16
+  unverified_face_weight: 0.45
+  machine_readable_start_ratio: 0.56
+  machine_readable_min_band_coverage: 0.54
+  machine_readable_max_band_height_ratio: 0.07
+
+border_trim:
+  white_threshold: 245
+  minimum_content_ratio: 0.006
+  safety_margin_ratio: 0.015
+  minimum_margin_px: 12
+  maximum_crop_ratio: 0.96
+  projection_enabled: true
+  projection_fallback_trigger_extent_ratio: 0.98
+  projection_edge_ignore_ratio: 0.02
+  projection_minimum_ink_density: 0.008
+  projection_smoothing_ratio: 0.01
+  projection_minimum_area_reduction: 0.55
+  projection_minimum_retained_ink_ratio: 0.995
+
+document:
+  minimum_area_ratio: 0.20
+  maximum_area_ratio: 0.995
+  rectangularity_threshold: 0.58
+  closing_kernel_ratio: 0.025
+  fallback_to_trimmed_image: true
+  safety_margin_ratio: 0.04
+  edge_guard_ratio: 0.012
+  edge_ink_threshold: 205
+  edge_ink_density_threshold: 0.012
+  maximum_outside_ink_density: 0.05
+  expansion_step_ratio: 0.04
+  expansion_context_multiplier: 3
+  max_expansion_steps: 8
+
+segmenter:
+  enabled: true
+  candidate_start_ratio: 0.28
+  candidate_end_ratio: 0.72
+  seam_ink_density_threshold: 0.012
+  min_segment_width_ratio: 0.25
+  seam_min_height_coverage: 0.55
+  seam_neighbourhood_ratio: 0.015
+  max_segments: 2
+  safety_padding_ratio: 0.04
+  line_seam_min_length_ratio: 0.68
+  line_seam_max_angle_degrees: 5.0
+  line_seam_hough_threshold: 85
+  line_seam_minimum_score: 0.67
+  minimum_seam_score: 0.72
+  gradient_blur_kernel: 31
+  gradient_minimum_pixel_delta: 1.0
+  gradient_minimum_coverage: 0.90
+
+classifier:
+  adaptive_block_size: 31
+  adaptive_constant: 11
+  portrait_min_area_ratio: 0.018
+  portrait_max_area_ratio: 0.34
+  portrait_min_aspect_ratio: 0.45
+  portrait_max_aspect_ratio: 1.35
+  face_scale_factor: 1.08
+  face_min_neighbors: 4
+  eye_scale_factor: 1.08
+  eye_min_neighbors: 3
+  eye_pair_min_x_ratio: 0.12
+  eye_pair_max_x_ratio: 0.88
+  eye_pair_min_y_ratio: 0.18
+  eye_pair_max_y_ratio: 0.58
+  eye_pair_min_separation_ratio: 0.18
+  eye_pair_max_separation_ratio: 0.62
+  eye_pair_max_vertical_delta_ratio: 0.16
+  verified_face_selection_bonus: 12.0
+  lower_region_start_ratio: 0.55
+  mrz_min_band_coverage: 0.52
+  mrz_min_band_ink_density: 0.03
+  mrz_max_band_height_ratio: 0.075
+  field_long_line_ratio: 0.58
+  confidence_threshold: 58.0
+  strong_layout_fallback_enabled: true
+  fallback_confidence_threshold: 55.0
+  fallback_portrait_threshold: 90.0
+  fallback_layout_threshold: 65.0
+  verified_face_fallback_enabled: true
+  verified_face_fallback_confidence_threshold: 50.0
+  verified_face_fallback_portrait_threshold: 85.0
+  verified_face_fallback_layout_threshold: 65.0
+  verified_face_fallback_eye_quality: 0.80
+  narrative_rejection_enabled: true
+  narrative_minimum_line_count: 50
+  narrative_maximum_eye_quality: 0.20
+  narrative_maximum_mrz_score: 10.0
+  portrait_rectangle_max_score: 55.0
+  portrait_weight: 0.38
+  mrz_weight: 0.14
+  layout_weight: 0.24
+  text_weight: 0.19
+  rotation_weight: 0.05
+
+normalizer:
+  enable_deskew: true
+  max_abs_deskew_degrees: 6.0
+  hough_threshold: 70
+  trim_after_deskew: false
+  minimum_abs_deskew_degrees: 1.0
+  minimum_deskew_confidence: 0.65
+  minimum_deskew_improvement_ratio: 0.20
+  safe_padding_ratio: 0.04
+  minimum_padding_px: 24
+  edge_guard_ratio: 0.015
+  edge_ink_threshold: 205
+  edge_ink_density_threshold: 0.012
+
+output:
+  output_subdirectory: data_pages
+  debug_subdirectory: debug
+  failed_subdirectory: failed_cases
+  png_compression: 3
+
+validation:
+  dataset_root: dataset
+  report_filename: validation_report.html
+  failure_subdirectory: failed
+  multiple_candidate_margin: 5.0
+
+ocr:
+  language: ch
+  ocr_version: PP-OCRv5
+  text_detection_model_name: PP-OCRv5_mobile_det
+  text_recognition_model_name: PP-OCRv5_mobile_rec
+  device: cpu
+  enable_mkldnn: false
+  use_doc_orientation_classify: false
+  use_doc_unwarping: false
+  use_textline_orientation: false
+  text_recognition_batch_size: 8
+  minimum_text_confidence: 0.50
+  low_confidence_threshold: 0.75
+  minimum_mean_confidence: 0.80
+  mrz_minimum_length: 28
+  mrz_maximum_length: 46
+  mrz_minimum_allowed_ratio: 0.85
+  mrz_minimum_content_width_ratio: 0.55
+  results_subdirectory: results
+  report_filename: ocr_report.html
+  summary_filename: summary.json
+  overlay_line_thickness: 2

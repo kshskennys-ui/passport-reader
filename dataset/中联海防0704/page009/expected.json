@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_file": "中联海防0704证件.pdf",
+  "source_page": 9,
+  "contains_data_page": true,
+  "expected_pages": 1,
+  "rotation": 270,
+  "remarks": "Source scan requires a clockwise 270 degree rotation.",
+  "annotator": "bootstrap_visual_annotation"
+}

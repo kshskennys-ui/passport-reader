@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_file": "高丽紫丁香护照.pdf",
+  "source_page": 5,
+  "contains_data_page": true,
+  "expected_pages": 1,
+  "rotation": 0,
+  "remarks": "",
+  "annotator": "codex_visual_audit_2026-07-16"
+}

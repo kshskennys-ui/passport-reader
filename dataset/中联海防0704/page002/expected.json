@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_file": "中联海防0704证件.pdf",
+  "source_page": 2,
+  "contains_data_page": true,
+  "expected_pages": 1,
+  "rotation": 0,
+  "remarks": "",
+  "annotator": "bootstrap_visual_annotation"
+}

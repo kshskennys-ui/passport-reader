@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_file": "中联海防0704证件.pdf",
+  "source_page": 7,
+  "contains_data_page": false,
+  "expected_pages": 0,
+  "rotation": 0,
+  "remarks": "Visa-only spread. No personal information page is present.",
+  "annotator": "bootstrap_visual_annotation"
+}
