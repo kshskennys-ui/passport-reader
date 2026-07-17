@@ -60,3 +60,15 @@ py -3.13 scripts/run_ocr_baseline.py `
 The baseline is resumable and never modifies Phase 1 images. It saves `ocr.json` and `overlay.png` for every page, plus `summary.json` and `ocr_report.html`. Analysis-only configuration changes reuse saved OCR text and regenerate metrics without running PaddleOCR again.
 
 The current PP-OCRv5 mobile CPU run completed all 186 data pages with no runtime errors. Mean page confidence is 90.8%; 174 pages form MRZ candidate groups of at least two lines, while 12 pages have one MRZ line split across multiple OCR boxes. These are candidate-region diagnostics, not MRZ character accuracy or ICAO validation. Production field extraction should remain blocked until quality Review and MRZ-specific recognition validation are complete.
+
+## Phase 2B MRZ second pass
+
+The targeted MRZ experiment reads the existing OCR geometry, clusters split fragments into a safe lower-page band, and runs a second OCR pass on that band:
+
+```powershell
+py -3.13 scripts/run_mrz_second_pass.py `
+  --baseline-root output/ocr_baseline_v0_1 `
+  --output-root output/ocr_mrz_v0_1
+```
+
+The default run processes only pages where the first pass reported an incomplete MRZ candidate. It writes `mrz_region_overlay.png`, `mrz_crop.png`, `mrz_ocr_overlay.png`, and `mrz.json` per page. The current 12-page targeted run located all 12 MRZ bands with no crop-region failure. Six pages produced at least two long OCR lines directly; the remaining pages still need row-specific enlargement/recognition. The crop images show that the MRZ itself is present, so these remaining cases are OCR line-detection issues rather than Phase 1 crop loss.

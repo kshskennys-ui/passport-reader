@@ -170,3 +170,16 @@ ocr:
   report_filename: ocr_report.html
   summary_filename: summary.json
   overlay_line_thickness: 2
+
+mrz:
+  enabled: true
+  minimum_fragment_confidence: 0.35
+  minimum_allowed_ratio: 0.70
+  lower_content_start_ratio: 0.60
+  row_y_tolerance_ratio: 0.015
+  minimum_row_width_ratio: 0.18
+  minimum_row_height_px: 8
+  maximum_rows: 3
+  horizontal_padding_ratio: 0.02
+  vertical_padding_ratio: 0.05
+  minimum_crop_height_ratio: 0.10

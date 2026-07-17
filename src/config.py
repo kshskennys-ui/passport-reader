@@ -203,6 +203,21 @@ class OCRConfig:
 
 
 @dataclass(frozen=True)
+class MRZConfig:
+    enabled: bool = True
+    minimum_fragment_confidence: float = 0.35
+    minimum_allowed_ratio: float = 0.70
+    lower_content_start_ratio: float = 0.60
+    row_y_tolerance_ratio: float = 0.015
+    minimum_row_width_ratio: float = 0.18
+    minimum_row_height_px: int = 8
+    maximum_rows: int = 3
+    horizontal_padding_ratio: float = 0.02
+    vertical_padding_ratio: float = 0.05
+    minimum_crop_height_ratio: float = 0.10
+
+
+@dataclass(frozen=True)
 class PipelineConfig:
     loader: LoaderConfig = field(default_factory=LoaderConfig)
     orientation: OrientationConfig = field(default_factory=OrientationConfig)
@@ -214,6 +229,7 @@ class PipelineConfig:
     output: OutputConfig = field(default_factory=OutputConfig)
     validation: ValidationConfig = field(default_factory=ValidationConfig)
     ocr: OCRConfig = field(default_factory=OCRConfig)
+    mrz: MRZConfig = field(default_factory=MRZConfig)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -240,6 +256,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         output=OutputConfig(**values["output"]),
         validation=ValidationConfig(**values["validation"]),
         ocr=OCRConfig(**values["ocr"]),
+        mrz=MRZConfig(**values["mrz"]),
     )
 
 

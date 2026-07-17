@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ocr.path_utils import resolve_project_path
 
 @dataclass(frozen=True)
 class OCRLine:
@@ -65,7 +66,7 @@ class OCRPageResult:
         if overlay and not overlay.is_absolute():
             overlay = output_root / overlay
         return cls(
-            source_image=Path(payload["source_image"]),
+            source_image=resolve_project_path(payload["source_image"]),
             document=str(payload.get("document", "")),
             page_number=int(payload.get("page_number", 0)),
             status=str(payload.get("status", "error")),

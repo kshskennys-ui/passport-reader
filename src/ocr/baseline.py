@@ -148,7 +148,11 @@ class OCRBaselineRunner:
             saved_inference_signature = payload.get("inference_signature")
             if saved_inference_signature and saved_inference_signature != current_inference_signature:
                 return None
+            path_changed = result.source_image != image_path
+            result.source_image = image_path
             if (
+                path_changed
+                or
                 result.analysis_signature != current_analysis_signature
                 or not result.overlay_path
                 or not result.overlay_path.exists()

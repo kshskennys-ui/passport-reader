@@ -6,11 +6,13 @@ from pathlib import Path
 import numpy as np
 
 from config import OCRConfig
+from config import MRZConfig
 from image_utils import write_png
 from ocr.analyzer import analyze_ocr_lines, is_mrz_candidate
 from ocr.baseline import OCRBaselineRunner
 from ocr.models import OCRLine
 from ocr.paddle_engine import parse_paddle_result
+from ocr.mrz_locator import locate_mrz_region
 
 
 class FakeEngine:
@@ -87,3 +89,23 @@ def test_runner_writes_report_and_reuses_matching_result(tmp_path: Path) -> None
     payload = json.loads(result_path.read_text(encoding="utf-8"))
     assert payload["metrics"]["mrz_candidate_count"] == 2
     assert (result_path.parent / "overlay.png").exists()
+
+
+def test_mrz_locator_merges_split_rows_with_safe_padding() -> None:
+    lines = [
+        OCRLine([[40, 120], [120, 120], [120, 140], [40, 140]], "NAME", 0.95),
+        OCRLine([[100, 800], [480, 800], [480, 824], [100, 824]], "P<CHNTEST<<<<<<<<<<<<<<<<", 0.90),
+        OCRLine([[500, 801], [900, 801], [900, 824], [500, 824]], "<<<<<<<<<<<<<<<<<<<", 0.88),
+        OCRLine([[100, 840], [520, 840], [520, 864], [100, 864]], "E123456789CHN900101<<<<<<<<", 0.92),
+        OCRLine([[540, 841], [900, 841], [900, 864], [540, 864]], "1M3001012<<<<<<<<<<", 0.91),
+    ]
+
+    region = locate_mrz_region(lines, (1000, 1000), MRZConfig())
+
+    assert region is not None
+    assert len(region.rows) == 2
+    assert region.rect.x < 100
+    assert region.rect.y < 800
+    assert region.rect.y + region.rect.h > 864
+    assert region.rows[0].line_indices == [1, 2]
+    assert region.rows[1].line_indices == [3, 4]
