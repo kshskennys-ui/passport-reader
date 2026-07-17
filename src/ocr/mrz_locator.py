@@ -67,6 +67,8 @@ def locate_mrz_region(
         return None
     selected = rows[-config.maximum_rows :]
     if len(selected) < 2:
+        selected = _expand_single_row(selected, lines, width, height, config)
+    if len(selected) < 2:
         if len(selected) != 1 or selected[0].rect.h < config.minimum_row_height_px * 2:
             return None
     x1 = min(row.rect.x for row in selected)
@@ -91,6 +93,47 @@ def locate_mrz_region(
         rows=selected,
         confidence=sum(row.confidence for row in selected) / len(selected),
     )
+
+
+def _expand_single_row(
+    selected: list[MRZRow],
+    lines: list[OCRLine],
+    width: int,
+    height: int,
+    config: MRZConfig,
+) -> list[MRZRow]:
+    """Recover the neighboring MRZ row when OCR misreads its markers."""
+    if len(selected) != 1:
+        return selected
+    row = selected[0]
+    candidates: list[tuple[float, MRZRow]] = []
+    max_gap = max(24, round(row.rect.h * 2.25), round(height * 0.06))
+    for index, line in enumerate(lines):
+        if index in row.line_indices or not line.polygon:
+            continue
+        compact = "".join(line.text.upper().split())
+        if len(compact) < 15 or line.confidence < config.minimum_fragment_confidence:
+            continue
+        allowed_ratio = len(MRZ_CHARACTER.findall(compact)) / len(compact)
+        if allowed_ratio < config.minimum_allowed_ratio:
+            continue
+        candidate = _line_rect(index, line, width)
+        overlap = _horizontal_overlap_ratio(candidate, row.rect)
+        if overlap < 0.55:
+            continue
+        if candidate.y + candidate.h <= row.rect.y:
+            gap = row.rect.y - candidate.y - candidate.h
+        elif row.rect.y + row.rect.h <= candidate.y:
+            gap = candidate.y - row.rect.y - row.rect.h
+        else:
+            continue
+        if gap < 0 or gap > max_gap:
+            continue
+        candidates.append((gap + abs(candidate.w - row.rect.w) / max(1, width), _line_to_row(index, line, width)))
+    if not candidates:
+        return selected
+    neighbor = min(candidates, key=lambda item: item[0])[1]
+    return sorted([neighbor, row], key=lambda item: item.rect.y)
 
 
 def _is_mrz_fragment(
@@ -152,6 +195,29 @@ def _cluster_rows(
             )
         )
     return rows
+
+
+def _line_to_row(index: int, line: OCRLine, width: int) -> MRZRow:
+    rect = _line_rect(index, line, width)
+    return MRZRow(
+        line_indices=[index],
+        rect=rect,
+        text=line.text,
+        confidence=line.confidence,
+        width_ratio=rect.w / max(1, width),
+    )
+
+
+def _line_rect(index: int, line: OCRLine, width: int) -> Rect:
+    points = line.polygon
+    x1, y1 = min(point[0] for point in points), min(point[1] for point in points)
+    x2, y2 = max(point[0] for point in points), max(point[1] for point in points)
+    return Rect(x1, y1, max(1, x2 - x1), max(1, y2 - y1))
+
+
+def _horizontal_overlap_ratio(first: Rect, second: Rect) -> float:
+    overlap = max(0, min(first.x + first.w, second.x + second.w) - max(first.x, second.x))
+    return overlap / max(1, min(first.w, second.w))
 
 
 def _content_bbox(lines: list[OCRLine], width: int, height: int) -> dict[str, int] | None:

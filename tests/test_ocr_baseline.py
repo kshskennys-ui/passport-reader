@@ -109,3 +109,27 @@ def test_mrz_locator_merges_split_rows_with_safe_padding() -> None:
     assert region.rect.y + region.rect.h > 864
     assert region.rows[0].line_indices == [1, 2]
     assert region.rows[1].line_indices == [3, 4]
+
+
+def test_mrz_locator_recovers_neighbor_when_first_row_loses_markers() -> None:
+    lines = [
+        OCRLine([[40, 120], [220, 120], [220, 145], [40, 145]], "NAME", 0.95),
+        OCRLine(
+            [[68, 675], [1055, 671], [1055, 714], [66, 718]],
+            "PAIDNMULYANTOAAASHARIAAAAAAAAAAAAAAAAAAAAAAA",
+            0.76,
+        ),
+        OCRLine(
+            [[68, 732], [1056, 731], [1056, 765], [68, 766]],
+            "X4439894<8IDN8101316M34121903216093101000398",
+            0.95,
+        ),
+    ]
+
+    region = locate_mrz_region(lines, (1124, 1100), MRZConfig())
+
+    assert region is not None
+    assert len(region.rows) == 2
+    assert region.rows[0].line_indices == [1]
+    assert region.rows[1].line_indices == [2]
+    assert region.rect.y < 675
