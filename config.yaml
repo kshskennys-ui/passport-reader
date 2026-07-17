@@ -183,3 +183,9 @@ mrz:
   horizontal_padding_ratio: 0.02
   vertical_padding_ratio: 0.05
   minimum_crop_height_ratio: 0.10
+  row_upscale_factor: 3.0
+  row_vertical_padding_ratio: 0.70
+  row_tall_vertical_padding_ratio: 0.25
+  row_horizontal_padding_ratio: 0.01
+  row_minimum_allowed_ratio: 0.65
+  row_minimum_fragment_length: 2

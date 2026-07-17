@@ -71,4 +71,15 @@ py -3.13 scripts/run_mrz_second_pass.py `
   --output-root output/ocr_mrz_v0_1
 ```
 
-The default run processes only pages where the first pass reported an incomplete MRZ candidate. It writes `mrz_region_overlay.png`, `mrz_crop.png`, `mrz_ocr_overlay.png`, and `mrz.json` per page. The current 12-page targeted run located all 12 MRZ bands with no crop-region failure. Six pages produced at least two long OCR lines directly; the remaining pages still need row-specific enlargement/recognition. The crop images show that the MRZ itself is present, so these remaining cases are OCR line-detection issues rather than Phase 1 crop loss.
+The default run processes only pages where the first pass reported an incomplete MRZ candidate. It writes `mrz_region_overlay.png`, `mrz_crop.png`, `mrz_ocr_overlay.png`, and `mrz.json` per page. The current targeted run located all 12 MRZ bands with no crop-region failure. The crop images show that the MRZ itself is present, so remaining failures are OCR line-detection issues rather than Phase 1 crop loss.
+
+## Phase 2C MRZ row recognition
+
+Phase 2C keeps the Phase 2B safe band and additionally crops each located row, enlarges it, runs OCR independently, then merges fragments from left to right. It writes `mrz_row_01.png`, `mrz_row_01_ocr_overlay.png`, and corresponding files for each located row. The report includes merged text length and whether the recognized row lengths are equal. These are recognition diagnostics only; they do not perform field parsing, checksum validation, or automatic character correction.
+
+```powershell
+py -3.13 scripts/run_mrz_second_pass.py `
+  --baseline-root output/ocr_baseline_v0_1 `
+  --output-root output/ocr_mrz_v0_4 `
+  --no-resume
+```

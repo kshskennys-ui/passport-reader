@@ -17,6 +17,7 @@ from ocr.models import OCRLine
 from ocr.mrz_locator import MRZRegion, locate_mrz_region
 from ocr.path_utils import resolve_project_path
 from ocr.paddle_engine import PaddleOCREngine
+from ocr.mrz_rows import build_row_crops, merge_row_lines
 
 
 class MRZOCRBackend(Protocol):
@@ -95,17 +96,45 @@ class MRZSecondPassRunner:
             second_lines = self.engine.recognize(crop_path)
             ocr_overlay_path = result_dir / "mrz_ocr_overlay.png"
             write_png(ocr_overlay_path, _draw_ocr_overlay(crop, second_lines))
+            row_results: list[dict] = []
+            row_files: list[dict] = []
+            for row_crop in build_row_crops(image, region, self.mrz_config):
+                row_path = result_dir / f"mrz_row_{row_crop.row_index:02d}.png"
+                row_overlay_path = result_dir / f"mrz_row_{row_crop.row_index:02d}_ocr_overlay.png"
+                write_png(row_path, row_crop.image)
+                row_lines = self.engine.recognize(row_path)
+                row_text = merge_row_lines(row_lines, row_crop, self.mrz_config)
+                write_png(row_overlay_path, _draw_ocr_overlay(row_crop.image, row_lines))
+                row_result = row_text.as_dict()
+                row_result.update(
+                    {
+                        "source_rect": row_crop.source_rect.as_dict(),
+                        "crop_rect": row_crop.crop_rect.as_dict(),
+                        "scale": row_crop.scale,
+                        "ocr_lines": [line.as_dict() for line in row_lines],
+                    }
+                )
+                row_results.append(row_result)
+                row_files.append(
+                    {
+                        "row_index": row_crop.row_index,
+                        "crop": str(row_path.relative_to(output_root)),
+                        "overlay": str(row_overlay_path.relative_to(output_root)),
+                    }
+                )
             result.update(
                 {
                     "status": "ok",
                     "region": region.as_dict(),
                     "source_candidate_line_count": len(lines),
                     "second_pass_lines": [line.as_dict() for line in second_lines],
-                    "metrics": _second_pass_metrics(second_lines),
+                    "row_results": row_results,
+                    "metrics": _second_pass_metrics(second_lines, row_results),
                     "files": {
                         "mrz_crop": str(crop_path.relative_to(output_root)),
                         "region_overlay": str(source_overlay_path.relative_to(output_root)),
                         "ocr_overlay": str(ocr_overlay_path.relative_to(output_root)),
+                        "row_passes": row_files,
                     },
                 }
             )
@@ -115,7 +144,7 @@ class MRZSecondPassRunner:
         return _write_result(result_json, result)
 
 
-def _second_pass_metrics(lines: list[OCRLine]) -> dict:
+def _second_pass_metrics(lines: list[OCRLine], row_results: list[dict] | None = None) -> dict:
     mrz_like = []
     for line in lines:
         compact = "".join(line.text.upper().split())
@@ -125,6 +154,14 @@ def _second_pass_metrics(lines: list[OCRLine]) -> dict:
         if allowed >= 0.85:
             mrz_like.append(line)
     confidences = [line.confidence for line in lines]
+    row_results = row_results or []
+    row_lengths = [len(item.get("normalized_text", "")) for item in row_results]
+    row_texts = [length for length in row_lengths if length > 0]
+    row_confidences = [
+        float(item["confidence"])
+        for item in row_results
+        if item.get("confidence") is not None
+    ]
     return {
         "line_count": len(lines),
         "mrz_like_line_count": len(mrz_like),
@@ -133,6 +170,13 @@ def _second_pass_metrics(lines: list[OCRLine]) -> dict:
             sum(line.confidence for line in mrz_like) / len(mrz_like), 6
         )
         if mrz_like
+        else None,
+        "row_count": len(row_results),
+        "rows_with_text": len(row_texts),
+        "row_lengths": row_lengths,
+        "row_lengths_equal": len(row_texts) >= 2 and len(set(row_texts)) == 1,
+        "row_mean_confidence": round(sum(row_confidences) / len(row_confidences), 6)
+        if row_confidences
         else None,
     }
 
@@ -182,7 +226,7 @@ def write_mrz_report(output_root: Path, results: list[dict], *, all_pages: bool)
     rows = "\n".join(_report_row(output_root, result) for result in results)
     html = f"""<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><title>MRZ Second Pass</title>
 <style>body{{font:14px Segoe UI,Microsoft YaHei,sans-serif;margin:24px;color:#17202a}}table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #d8dde3;padding:8px;text-align:left;vertical-align:top}}th{{background:#eef1f4}}img{{width:260px;max-height:180px;object-fit:contain}}.ok{{color:#147d46}}.warning{{color:#a45b00}}.error{{color:#b42318}}</style>
-<h1>Phase 2B MRZ专项报告</h1><p>处理页数：{summary['pages']}；定位成功：{summary['located']}；二次识别检出至少两条长行：{summary['second_pass_two_lines']}；错误：{summary['errors']}</p>
+<h1>Phase 2C MRZ按行识别报告</h1><p>处理页数：{summary['pages']}；定位成功：{summary['located']}；二次识别检出至少两条长行：{summary['second_pass_two_lines']}；错误：{summary['errors']}</p>
 <table><thead><tr><th>文件/页</th><th>状态</th><th>定位区域</th><th>二次OCR</th><th>图像</th></tr></thead><tbody>{rows}</tbody></table></html>"""
     report = output_root / "mrz_report.html"
     report.write_text(html, encoding="utf-8")
@@ -202,7 +246,9 @@ def _report_row(output_root: Path, result: dict) -> str:
     return (
         f"<tr><td>{result.get('document')} / {int(result.get('page_number', 0)):03d}</td>"
         f"<td class=\"{status}\">{status}</td><td>{region_text}<br>{warning}</td>"
-        f"<td>{metrics.get('line_count', 0)}行 / MRZ样式 {metrics.get('mrz_like_line_count', 0)}行</td>"
+        f"<td>{metrics.get('line_count', 0)}行 / MRZ样式 {metrics.get('mrz_like_line_count', 0)}行<br>"
+        f"按行：{metrics.get('rows_with_text', 0)}/{metrics.get('row_count', 0)}；长度 {metrics.get('row_lengths', [])}；"
+        f"等长：{metrics.get('row_lengths_equal', False)}</td>"
         f"<td>{image}</td></tr>"
     )
 

@@ -106,6 +106,12 @@ def _expand_single_row(
     if len(selected) != 1:
         return selected
     row = selected[0]
+    tall_row_threshold = max(
+        config.minimum_row_height_px * 5,
+        round(height * 0.04),
+    )
+    if row.rect.h >= tall_row_threshold:
+        return selected
     candidates: list[tuple[float, MRZRow]] = []
     max_gap = max(24, round(row.rect.h * 2.25), round(height * 0.06))
     for index, line in enumerate(lines):

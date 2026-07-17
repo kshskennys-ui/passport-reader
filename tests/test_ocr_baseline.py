@@ -13,6 +13,7 @@ from ocr.baseline import OCRBaselineRunner
 from ocr.models import OCRLine
 from ocr.paddle_engine import parse_paddle_result
 from ocr.mrz_locator import locate_mrz_region
+from ocr.mrz_rows import build_row_crops, merge_row_lines
 
 
 class FakeEngine:
@@ -133,3 +134,45 @@ def test_mrz_locator_recovers_neighbor_when_first_row_loses_markers() -> None:
     assert region.rows[0].line_indices == [1]
     assert region.rows[1].line_indices == [2]
     assert region.rect.y < 675
+
+
+def test_mrz_locator_does_not_expand_an_already_tall_row() -> None:
+    lines = [
+        OCRLine([[800, 520], [1050, 520], [1050, 550], [800, 550]], "AUTHORITYTEXT", 0.95),
+        OCRLine(
+            [[100, 600], [900, 600], [900, 680], [100, 680]],
+            "A904788527CHN0309183M3001204NDNKNBPD<<<<A078PMCHNYU<<YANG<<<<<<<<<<<<<<<<<<<",
+            0.90,
+        ),
+    ]
+
+    region = locate_mrz_region(lines, (1000, 1100), MRZConfig())
+
+    assert region is not None
+    assert len(region.rows) == 1
+    assert region.rows[0].line_indices == [1]
+
+
+def test_mrz_rows_upscale_and_merge_split_ocr_boxes() -> None:
+    lines = [
+        OCRLine([[100, 800], [480, 800], [480, 824], [100, 824]], "P<CHNTEST<<<<<<<<", 0.90),
+        OCRLine([[500, 801], [900, 801], [900, 824], [500, 824]], "<<<<<<<<<<<<<<", 0.88),
+        OCRLine([[100, 840], [520, 840], [520, 864], [100, 864]], "E123456789CHN900101<<<<<<<<", 0.92),
+        OCRLine([[540, 841], [900, 841], [900, 864], [540, 864]], "1M3001012<<<<<<<<", 0.91),
+    ]
+    region = locate_mrz_region(lines, (1000, 1000), MRZConfig())
+
+    assert region is not None
+    crops = build_row_crops(np.zeros((1000, 1000, 3), dtype=np.uint8), region, MRZConfig())
+    assert len(crops) == 2
+    assert crops[0].scale == 3.0
+    assert crops[0].image.shape[0] > crops[0].crop_rect.h
+
+    first_row_lines = [
+        OCRLine([[20, 50], [220, 50], [220, 70], [20, 70]], "P<CHNTEST<<<<<<<<", 0.90),
+        OCRLine([[230, 51], [420, 51], [420, 71], [230, 71]], "<<<<<<<<<<<<<<", 0.88),
+    ]
+    merged = merge_row_lines(first_row_lines, crops[0], MRZConfig())
+
+    assert merged.fragment_count == 2
+    assert merged.normalized_text == "P<CHNTEST<<<<<<<<" + "<<<<<<<<<<<<<<"

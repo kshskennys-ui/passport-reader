@@ -215,6 +215,12 @@ class MRZConfig:
     horizontal_padding_ratio: float = 0.02
     vertical_padding_ratio: float = 0.05
     minimum_crop_height_ratio: float = 0.10
+    row_upscale_factor: float = 3.0
+    row_vertical_padding_ratio: float = 0.70
+    row_tall_vertical_padding_ratio: float = 0.25
+    row_horizontal_padding_ratio: float = 0.01
+    row_minimum_allowed_ratio: float = 0.65
+    row_minimum_fragment_length: int = 2
 
 
 @dataclass(frozen=True)
