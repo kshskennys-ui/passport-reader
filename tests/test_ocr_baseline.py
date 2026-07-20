@@ -14,6 +14,7 @@ from ocr.models import OCRLine
 from ocr.paddle_engine import parse_paddle_result
 from ocr.mrz_locator import locate_mrz_region
 from ocr.mrz_rows import build_row_crops, merge_row_lines
+from ocr.mrz_parser import parse_mrz_row_results
 
 
 class FakeEngine:
@@ -176,3 +177,34 @@ def test_mrz_rows_upscale_and_merge_split_ocr_boxes() -> None:
 
     assert merged.fragment_count == 2
     assert merged.normalized_text == "P<CHNTEST<<<<<<<<" + "<<<<<<<<<<<<<<"
+
+
+def test_mrz_parser_reconstructs_concatenated_td3_and_validates_checks() -> None:
+    first = "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<"
+    second = "L898902C36UTO7408122F1204159ZE184226B<<<<<10"
+
+    parsed = parse_mrz_row_results([{"row_index": 1, "normalized_text": first + second}])
+
+    assert parsed["status"] == "valid"
+    assert parsed["format"] == "TD3"
+    assert parsed["reconstruction"]["method"] == "split_concatenated_row"
+    assert parsed["fields"]["surname"] == "ERIKSSON"
+    assert parsed["fields"]["given_names"] == "ANNA MARIA"
+    assert parsed["fields"]["passport_number"] == "L898902C3"
+    assert parsed["validation"]["all_check_digits_valid"]
+
+
+def test_mrz_parser_does_not_correct_invalid_check_digit() -> None:
+    first = "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<"
+    second = "L898902C36UTO7408122F1204159ZE184226B<<<<<11"
+
+    parsed = parse_mrz_row_results(
+        [
+            {"row_index": 1, "normalized_text": first},
+            {"row_index": 2, "normalized_text": second},
+        ]
+    )
+
+    assert parsed["status"] == "invalid"
+    assert "check_digit_failed" in parsed["reasons"]
+    assert parsed["validation"]["check_digits"][-1]["value"] == "1"

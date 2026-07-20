@@ -18,6 +18,7 @@ from ocr.mrz_locator import MRZRegion, locate_mrz_region
 from ocr.path_utils import resolve_project_path
 from ocr.paddle_engine import PaddleOCREngine
 from ocr.mrz_rows import build_row_crops, merge_row_lines
+from ocr.mrz_parser import parse_mrz_row_results
 
 
 class MRZOCRBackend(Protocol):
@@ -129,6 +130,7 @@ class MRZSecondPassRunner:
                     "source_candidate_line_count": len(lines),
                     "second_pass_lines": [line.as_dict() for line in second_lines],
                     "row_results": row_results,
+                    "mrz_parse": parse_mrz_row_results(row_results),
                     "metrics": _second_pass_metrics(second_lines, row_results),
                     "files": {
                         "mrz_crop": str(crop_path.relative_to(output_root)),
@@ -138,6 +140,13 @@ class MRZSecondPassRunner:
                     },
                 }
             )
+            parse_status = result["mrz_parse"].get("status")
+            if parse_status == "invalid":
+                result["warnings"].append("mrz_parse_invalid")
+            elif parse_status == "incomplete":
+                result["warnings"].append("mrz_parse_incomplete")
+            elif parse_status == "unsupported_format":
+                result["warnings"].append("mrz_parse_unsupported_format")
         except Exception as exc:
             result["error"] = f"{type(exc).__name__}: {exc}"
         result["elapsed_ms"] = round((time.perf_counter() - started) * 1000, 2)
@@ -216,6 +225,14 @@ def write_mrz_report(output_root: Path, results: list[dict], *, all_pages: bool)
         "second_pass_two_lines": sum(
             result.get("metrics", {}).get("mrz_like_line_count", 0) >= 2 for result in results
         ),
+        "parse_valid": sum(result.get("mrz_parse", {}).get("status") == "valid" for result in results),
+        "parse_invalid": sum(result.get("mrz_parse", {}).get("status") == "invalid" for result in results),
+        "parse_incomplete": sum(
+            result.get("mrz_parse", {}).get("status") == "incomplete" for result in results
+        ),
+        "parse_unsupported_format": sum(
+            result.get("mrz_parse", {}).get("status") == "unsupported_format" for result in results
+        ),
         "all_pages": all_pages,
         "total_elapsed_ms": round(sum(float(result.get("elapsed_ms", 0.0)) for result in results), 2),
     }
@@ -226,7 +243,7 @@ def write_mrz_report(output_root: Path, results: list[dict], *, all_pages: bool)
     rows = "\n".join(_report_row(output_root, result) for result in results)
     html = f"""<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><title>MRZ Second Pass</title>
 <style>body{{font:14px Segoe UI,Microsoft YaHei,sans-serif;margin:24px;color:#17202a}}table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #d8dde3;padding:8px;text-align:left;vertical-align:top}}th{{background:#eef1f4}}img{{width:260px;max-height:180px;object-fit:contain}}.ok{{color:#147d46}}.warning{{color:#a45b00}}.error{{color:#b42318}}</style>
-<h1>Phase 2C MRZ按行识别报告</h1><p>处理页数：{summary['pages']}；定位成功：{summary['located']}；二次识别检出至少两条长行：{summary['second_pass_two_lines']}；错误：{summary['errors']}</p>
+<h1>Phase 3 MRZ解析与校验报告</h1><p>处理页数：{summary['pages']}；定位成功：{summary['located']}；按行 OCR 检出至少两条长行：{summary['second_pass_two_lines']}；解析通过：{summary['parse_valid']}；解析异常：{summary['parse_invalid'] + summary['parse_incomplete'] + summary['parse_unsupported_format']}；运行错误：{summary['errors']}</p>
 <table><thead><tr><th>文件/页</th><th>状态</th><th>定位区域</th><th>二次OCR</th><th>图像</th></tr></thead><tbody>{rows}</tbody></table></html>"""
     report = output_root / "mrz_report.html"
     report.write_text(html, encoding="utf-8")
@@ -236,6 +253,7 @@ def write_mrz_report(output_root: Path, results: list[dict], *, all_pages: bool)
 def _report_row(output_root: Path, result: dict) -> str:
     status = result.get("status", "error")
     metrics = result.get("metrics", {})
+    parsed = result.get("mrz_parse", {})
     files = result.get("files", {})
     image = "-"
     if files.get("ocr_overlay"):
@@ -248,7 +266,8 @@ def _report_row(output_root: Path, result: dict) -> str:
         f"<td class=\"{status}\">{status}</td><td>{region_text}<br>{warning}</td>"
         f"<td>{metrics.get('line_count', 0)}行 / MRZ样式 {metrics.get('mrz_like_line_count', 0)}行<br>"
         f"按行：{metrics.get('rows_with_text', 0)}/{metrics.get('row_count', 0)}；长度 {metrics.get('row_lengths', [])}；"
-        f"等长：{metrics.get('row_lengths_equal', False)}</td>"
+        f"等长：{metrics.get('row_lengths_equal', False)}<br>"
+        f"解析：{parsed.get('status', 'N/A')}；格式：{parsed.get('format', 'N/A')}</td>"
         f"<td>{image}</td></tr>"
     )
 

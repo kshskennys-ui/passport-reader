@@ -83,3 +83,15 @@ py -3.13 scripts/run_mrz_second_pass.py `
   --output-root output/ocr_mrz_v0_4 `
   --no-resume
 ```
+
+## Phase 3 MRZ parsing and validation
+
+The parser consumes saved row-level OCR results without rerunning PaddleOCR. It reconstructs concatenated rows, detects TD1/TD2/TD3 layouts, parses TD3 passport fields, and applies ICAO modulus-10 check digits with the `7-3-1` weighting. It never silently corrects uncertain OCR characters.
+
+```powershell
+py -3.13 scripts/run_mrz_parser.py `
+  --input-root output/ocr_mrz_group_all_crew_v0_1 `
+  --all-pages
+```
+
+The report separates valid parses from invalid, incomplete, and unsupported-format results. A valid parse is a structural and checksum result, not a guarantee that the source document identity has been independently verified.
