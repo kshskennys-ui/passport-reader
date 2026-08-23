@@ -69,6 +69,8 @@ def locate_mrz_region(
     if len(selected) < 2:
         selected = _expand_single_row(selected, lines, width, height, config)
     if len(selected) < 2:
+        if len(selected) == 1 and "<" not in selected[0].text:
+            return None
         if len(selected) != 1 or selected[0].rect.h < config.minimum_row_height_px * 2:
             return None
     x1 = min(row.rect.x for row in selected)
@@ -118,12 +120,17 @@ def _expand_single_row(
         if index in row.line_indices or not line.polygon:
             continue
         compact = "".join(line.text.upper().split())
+        # A neighboring row must be close to a complete MRZ line. Short filler
+        # fragments remain valid because split OCR boxes are merged later.
         if len(compact) < 15 or line.confidence < config.minimum_fragment_confidence:
             continue
         allowed_ratio = len(MRZ_CHARACTER.findall(compact)) / len(compact)
         if allowed_ratio < config.minimum_allowed_ratio:
             continue
         candidate = _line_rect(index, line, width)
+        if "<" not in compact and len(compact) < 28:
+            if candidate.w < row.rect.w * 0.75:
+                continue
         overlap = _horizontal_overlap_ratio(candidate, row.rect)
         if overlap < 0.55:
             continue

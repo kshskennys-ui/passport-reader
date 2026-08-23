@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>证件信息页提取</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">IDENTITY DOCUMENT DATA PAGE EXTRACTOR</p>
+      <h1>证件信息页提取</h1>
+    </div>
+    <div class="connection"><span class="dot"></span><span id="connectionText">本地服务</span></div>
+  </header>
+
+  <main class="shell">
+    <section class="workspace-grid">
+      <div class="control-panel panel">
+        <div class="section-heading">
+          <div><p class="eyebrow">IMPORT</p><h2>导入文件</h2></div>
+          <span class="file-types">PDF · JPG · PNG · TIFF</span>
+        </div>
+        <label id="dropzone" class="dropzone" for="fileInput">
+          <input id="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff">
+          <span class="drop-icon">+</span>
+          <strong id="fileName">拖入证件文件</strong>
+          <span>或点击选择单个 PDF / 图片</span>
+        </label>
+        <div class="controls-row">
+          <label class="field">OCR并发数
+            <select id="workers"><option value="1">1 进程</option><option value="2" selected>2 进程</option><option value="3">3 进程</option></select>
+          </label>
+          <button id="startButton" class="primary" disabled>开始处理</button>
+        </div>
+        <div class="privacy-note">文件仅保存到本机任务目录，处理结果包含证件个人信息。</div>
+      </div>
+
+      <div class="summary-panel panel">
+        <div class="section-heading"><div><p class="eyebrow">JOB STATUS</p><h2>处理状态</h2></div><span id="statusBadge" class="badge idle">等待文件</span></div>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <div class="status-line"><strong id="statusText">尚未开始</strong><span id="progressText">0 / 0</span></div>
+        <div class="metrics">
+          <div><span>信息页</span><strong id="dataPageCount">0</strong></div>
+          <div><span>MRZ通过</span><strong id="validCount">0</strong></div>
+          <div><span>警告</span><strong id="warningCount">0</strong></div>
+        </div>
+        <div class="export-actions">
+          <a id="reportLink" class="report-link hidden" target="_blank">打开 MRZ 报告</a>
+          <a id="exportLink" class="export-link hidden" download="船员名单.xlsx">导出 Excel</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <aside class="pages-panel panel">
+        <div class="section-heading compact"><div><p class="eyebrow">PAGES</p><h2>页面进度</h2></div><span id="pageCountLabel">0 页</span></div>
+        <div id="pageList" class="page-list"><div class="empty-state">处理开始后显示页面结果</div></div>
+      </aside>
+
+      <section class="detail-panel panel">
+        <div class="section-heading compact"><div><p class="eyebrow">LIVE DEBUG</p><h2 id="detailTitle">实时处理中间结果</h2></div><span id="detailStage" class="stage-label">等待</span></div>
+        <div id="imageStrip" class="image-strip"><div class="empty-state">选择左侧页面查看图像</div></div>
+        <div class="result-section">
+          <div class="section-heading compact"><div><p class="eyebrow">OCR RESULT</p><h2>解析信息</h2></div><span id="parseBadge" class="badge idle">未完成</span></div>
+          <div id="fields" class="fields-grid"><div class="empty-state">MRZ 解析完成后显示信息</div></div>
+          <div id="checks" class="checks"></div>
+        </div>
+        <div class="log-section">
+          <div class="section-heading compact"><div><p class="eyebrow">EVENT LOG</p><h2>实时日志</h2></div></div>
+          <div id="log" class="log-box"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div id="imageViewer" class="image-viewer hidden" role="dialog" aria-modal="true" aria-label="图片预览">
+    <button id="viewerClose" class="viewer-close" aria-label="关闭图片预览">×</button>
+    <img id="viewerImage" alt="放大预览">
+    <div id="viewerCaption" class="viewer-caption"></div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

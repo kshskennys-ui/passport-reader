@@ -86,7 +86,7 @@ py -3.13 scripts/run_mrz_second_pass.py `
 
 ## Phase 3 MRZ parsing and validation
 
-The parser consumes saved row-level OCR results without rerunning PaddleOCR. It reconstructs concatenated rows, detects TD1/TD2/TD3 layouts, parses TD3 passport fields, and applies ICAO modulus-10 check digits with the `7-3-1` weighting. It never silently corrects uncertain OCR characters.
+The parser consumes saved row-level OCR results without rerunning PaddleOCR. It reconstructs concatenated rows, detects TD1/TD2/TD3 layouts, parses TD3 passport fields, and applies ICAO modulus-10 check digits with the `7-3-1` weighting. Recovery is limited to structural filler/marker repairs, blank optional-data check digits, and a small OCR-confusion set; a candidate is accepted only when all TD3 check digits pass, and the recovery method is recorded in `mrz.json`.
 
 ```powershell
 py -3.13 scripts/run_mrz_parser.py `
@@ -95,3 +95,22 @@ py -3.13 scripts/run_mrz_parser.py `
 ```
 
 The report separates valid parses from invalid, incomplete, and unsupported-format results. A valid parse is a structural and checksum result, not a guarantee that the source document identity has been independently verified.
+
+## Fast MRZ-first OCR
+
+For production-style MRZ extraction, use the fast runner directly against Phase 1 data-page images:
+
+```powershell
+py -3.13 scripts/run_fast_mrz.py `
+  --input-root output/phase1/data_pages `
+  --output-root output/fast_mrz_v0_1 `
+  --workers 2
+```
+
+The fast path OCRs only the lower page band first. Pages that pass MRZ parsing do not run full-page OCR or row-level OCR. Pages that fail are automatically retried with full-page MRZ localization and, if needed, row-level OCR. Debug output is retained for the fast band, fallback crop, overlays, and any fallback row passes.
+
+`--workers 2` processes different pages in separate processes, with one PaddleOCR model per process. On the current machine, it reduced a 19-page sample from about 305 seconds to 188 seconds, with about 1.8 GB model memory. Use `--workers 1` when diagnosing a single page; 3 workers are available but are not the default because the additional gain is small compared with the extra memory.
+
+For targeted rechecks, add page numbers after `--pages`, for example `--pages 7 10 26`. The report distinguishes MRZ-region location from final MRZ parsing, and records fast-band versus full-page fallback counts separately.
+
+The existing `run_mrz_second_pass.py` also now skips row-level OCR when the targeted MRZ crop already produces a valid parse. Use the fast runner for new files; keep the baseline plus second-pass workflow for diagnostic comparisons and legacy outputs.

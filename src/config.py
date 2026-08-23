@@ -221,6 +221,9 @@ class MRZConfig:
     row_horizontal_padding_ratio: float = 0.01
     row_minimum_allowed_ratio: float = 0.65
     row_minimum_fragment_length: int = 2
+    fast_band_start_ratio: float = 0.50
+    fast_band_end_ratio: float = 0.98
+    fast_fallback_enabled: bool = True
 
 
 @dataclass(frozen=True)
