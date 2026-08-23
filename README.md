@@ -114,3 +114,7 @@ The fast path OCRs only the lower page band first. Pages that pass MRZ parsing d
 For targeted rechecks, add page numbers after `--pages`, for example `--pages 7 10 26`. The report distinguishes MRZ-region location from final MRZ parsing, and records fast-band versus full-page fallback counts separately.
 
 The existing `run_mrz_second_pass.py` also now skips row-level OCR when the targeted MRZ crop already produces a valid parse. Use the fast runner for new files; keep the baseline plus second-pass workflow for diagnostic comparisons and legacy outputs.
+
+## Redacted examples
+
+The `examples/` directory contains sanitized screenshots showing the normalized data page and MRZ localization overlay. Portraits, names, document numbers, dates, and MRZ characters are irreversibly masked; the original source files and runtime outputs are excluded from Git.
