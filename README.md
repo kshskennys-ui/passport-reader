@@ -1,8 +1,8 @@
-# Identity Document Data Page Extractor
+# 证件个人信息页提取工具
 
-Local desktop application for extracting normalized identity-document data pages from PDF, JPG, PNG, and TIFF inputs.
+这是一个本地证件处理工具，用于从 PDF、JPG、PNG 和 TIFF 文件中提取证件个人信息页，并输出标准化图片。
 
-Stage 1 intentionally uses only OpenCV-based visual analysis. Phase 2A adds an optional PaddleOCR baseline over the immutable Stage 1 outputs; MRZ parsing, ICAO validation, and export remain out of scope.
+第一阶段仅使用 OpenCV 进行图像分析，重点是个人信息页检测、旋转、裁剪和标准化输出。后续阶段再接入 PaddleOCR、MRZ 解析、ICAO 校验和 Excel 导出。
 
 ## Run
 
@@ -115,6 +115,6 @@ For targeted rechecks, add page numbers after `--pages`, for example `--pages 7 
 
 The existing `run_mrz_second_pass.py` also now skips row-level OCR when the targeted MRZ crop already produces a valid parse. Use the fast runner for new files; keep the baseline plus second-pass workflow for diagnostic comparisons and legacy outputs.
 
-## Redacted examples
+## 脱敏示例
 
-The `examples/` directory contains sanitized screenshots showing the normalized data page and MRZ localization overlay. Portraits, names, document numbers, dates, and MRZ characters are irreversibly masked; the original source files and runtime outputs are excluded from Git.
+`examples/` 目录包含处理结果示例：一张标准化个人信息页图片，以及一张 MRZ 定位叠加图。头像、姓名、证件号、日期和 MRZ 字符均已不可逆打码；原始证件文件和运行输出不会上传到 Git。

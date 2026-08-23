@@ -1,6 +1,6 @@
-# Redacted examples
+# 脱敏示例
 
-- `data_page_redacted.png`: normalized data-page output with identity-bearing regions masked.
-- `mrz_overlay_redacted.png`: MRZ localization overlay with the MRZ characters masked and the detected region retained.
+- `data_page_redacted.png`：标准化个人信息页结果，涉及个人身份的区域已打码。
+- `mrz_overlay_redacted.png`：MRZ 定位叠加结果，MRZ 字符已打码，但定位区域仍然保留。
 
-These images are documentation examples only. They are not input fixtures and contain no readable personal data.
+这些图片仅用于展示系统处理效果，不是测试输入文件，不包含可读取的个人信息。
