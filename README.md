@@ -117,4 +117,4 @@ The existing `run_mrz_second_pass.py` also now skips row-level OCR when the targ
 
 ## 脱敏示例
 
-`examples/` 目录包含处理结果示例：一张标准化个人信息页图片，以及一张 MRZ 定位叠加图。头像、姓名、证件号、日期和 MRZ 字符均已不可逆打码；原始证件文件和运行输出不会上传到 Git。
+`examples/` 目录包含多组处理结果示例，覆盖普通护照、中国海员证、带上半页说明内容的扫描件，以及展开/复印件形式的护照。头像、姓名、证件号、日期、签名和 MRZ 字符均已不可逆打码；原始证件文件和运行输出不会上传到 Git。
