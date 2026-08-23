@@ -118,3 +118,23 @@ The existing `run_mrz_second_pass.py` also now skips row-level OCR when the targ
 ## 脱敏示例
 
 `examples/` 目录包含多组处理结果示例，覆盖普通护照、中国海员证、带上半页说明内容的扫描件、展开/复印件形式的护照，以及 MRZ 报告和 Web 前端界面截图。头像、姓名、证件号、日期、签名和 MRZ 字符均已不可逆打码；原始证件文件和运行输出不会上传到 Git。
+
+### 处理结果示例
+
+![标准化个人信息页](examples/data_page_redacted.png)
+
+![中国海员证](examples/seaman_book_redacted.png)
+
+![韩国护照扫描](examples/korean_passport_scan_redacted.png)
+
+![展开或复印件形式护照](examples/expanded_passport_redacted.png)
+
+![MRZ 定位结果](examples/mrz_overlay_redacted.png)
+
+### 系统界面示例
+
+![MRZ 解析与校验报告](examples/mrz_report_screenshot.png)
+
+![MRZ 定位放大查看](examples/mrz_overlay_screenshot.png)
+
+![Web 前端实时处理界面](examples/web_frontend_screenshot.png)
