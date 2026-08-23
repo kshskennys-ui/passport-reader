@@ -5,5 +5,8 @@
 - `seaman_book_redacted.png`：中国海员证个人信息页标准化结果。
 - `korean_passport_scan_redacted.png`：包含上半页说明内容和下半页个人信息页的护照扫描结果。
 - `expanded_passport_redacted.png`：展开/复印件形式的护照扫描结果。
+- `mrz_report_screenshot.png`：MRZ 解析与校验报告界面示例。
+- `mrz_overlay_screenshot.png`：MRZ 定位放大查看界面示例。
+- `web_frontend_screenshot.png`：Web 前端实时处理界面示例。
 
 这些图片仅用于展示系统处理效果，不是测试输入文件，不包含可读取的个人信息。
